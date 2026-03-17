@@ -17,10 +17,11 @@ export const metadata: Metadata = {
     template: "%s | The Corporate Blog",
     default: "The Corporate Blog - Industry Insights",
   },
-  description: "Expert insights, engineering blogs",
+  description: "Expert insights, engineering blogsLatest corporate insights, company news, and industry trends.",
   openGraph: {
     type: "website",
     locale: "en_US",
+    url: 'https://the-corporate-blog.vercel.app',
     siteName: "The Corporate Blog",
   },
   twitter: {
