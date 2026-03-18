@@ -1,0 +1,22 @@
+// Example of how data will be stored in your JSONB content field
+{
+  "time": 1690000000000,
+  "blocks": [
+    {
+      "id": "block1",
+      "type": "header",
+      "data": { "text": "Welcome to Corporate Blog", "level": 2 }
+    },
+    {
+      "id": "block2",
+      "type": "paragraph",
+      "data": { "text": "This is a custom CMS built with Next.js and Neon." }
+    },
+    {
+      "id": "block3",
+      "type": "image",
+      "data": { "url": "https://res.cloudinary.com/...", "caption": "Dashboard" }
+    }
+  ],
+  "version": "1.0.0"
+}
