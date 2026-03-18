@@ -1,6 +1,14 @@
 import Link from "next/link";
+import type { Metadata } from 'next';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export const metadata: Metadata = {
+    title: 'Admin Dashboard | The Corporate Blog',
+    robots: {
+        index: false,
+        follow: false,
+    },
+};
+export default function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     return (
         <div className="flex min-h-screen bg-gray-50">
             <aside className="w-64 bg-white shadow-md p-6">
