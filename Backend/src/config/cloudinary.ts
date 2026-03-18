@@ -1,6 +1,9 @@
+import dotenv from 'dotenv';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
+
+dotenv.config();
 
 // Make sure to add these to your Vercel Environment Variables!
 cloudinary.config({

@@ -1,47 +1,41 @@
-"use client";
 import { create } from 'zustand';
-import { useEffect, useState } from "react";
 import axios from "axios";
 
 interface EditorState {
+    postId: number | null;
   title: string;
-  blocks: any[];
-  status: 'draft' | 'published';
-  setTitle: (title: string) => void;
-  addBlock: (block: any) => void;
-  updateBlock: (id: string, data: any) => void;
+  content: any[];
+  isSaving: boolean;
+  setPost: (data: Partial<EditorState>) => void;
+  autoSave: () => Promise<void>;
 }
 
-export const useEditorStore = create<EditorState>((set) => ({
+export const useEditorStore = create<EditorState>((set, get) => ({
+  postId: null,
   title: '',
-  blocks: [],
-  status: 'draft',
-  setTitle: (title) => set({ title }),
-  addBlock: (block) => set((state) => ({ blocks: [...state.blocks, block] })),
-  updateBlock: (id, data) => set((state) => ({
-    blocks: state.blocks.map(b => b.id === id ? { ...b, data } : b)
-  })),
-}));
-
-export default function DraftEditor({ postId }) {
-  const { content, title, setContent } = useEditorStore();
+  content: {},
+  isSaving: false,
   
-  // Auto-save Logic (Debouncing)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if(title || content) {
-        axios.put(`/api/posts/${postId}`, { title, content });
+  setPost: (data) => set((state) => ({ ...state, ...data })),
+  
+  autoSave: async () => {
+    const { postId, title, content } = get();
+    if (!title) return; // Bina title ke save nahi karenge
+    
+    set({ isSaving: true });
+    try {
+      if (!postId) {
+         // Create Draft
+         const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/posts`, { title, content, author_id: 1 });
+         set({ postId: res.data.post.id });
+      } else {
+         // Update Draft
+         await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/api/posts/${postId}`, { title, content });
       }
-    }, 3000); // 3 seconds baad auto-save
-
-    return () => clearTimeout(timer);
-  }, [content, title, postId]);
-
-  return (
-    <div>
-      {/* Slug Preview */}
-      <p className="text-gray-500">Preview: yourblog.com/blog/{title ? title.toLowerCase().replace(/ /g, '-') : 'new-post'}</p>
-      {/* Editor component here */}
-    </div>
-  );
-}
+    } catch (error) {
+      console.error("Auto-save failed", error);
+    } finally {
+      set({ isSaving: false });
+    }
+  }
+}));
