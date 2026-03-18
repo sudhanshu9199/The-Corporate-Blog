@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import { pool } from "./config/db";
 import authRoutes from "./routes/auth.routes";
+import postRoutes from './routes/post.routes';
 
 dotenv.config();
 
@@ -31,6 +32,12 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date() });
+});
+
+app.use('/api/posts', postRoutes);
+
 pool
   .connect()
   .then(() => console.log("✅ Neon PostgreSQL Connected Successfully!"))
@@ -52,6 +59,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
 app.use('/api/auth', authRoutes)
 const PORT = process.env.PORT || 8000;
+app.listen(8080, () => console.log('Backend running on port 8080'));
 
 if (process.env.NODE_ENV !== "PRODUCTION") {
   app.listen(PORT, () => {

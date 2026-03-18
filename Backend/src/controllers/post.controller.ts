@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { pool } from "../config/db";
+import { pool, queryDb } from "../config/db";
 import slugify from "slugify";
 
 const generateSlug = (title: string) =>
@@ -69,4 +69,25 @@ export const updatePost = async (req: Request, res: Response): Promise<any> => {
     console.error("Error updating post:", error);
     res.status(500).json({ error: "Server Error" });
   }
+};
+
+export const getPostBySlug = async (req: Request, res: Response) => {
+    try {
+        const { slug } = req.params;
+        // Enforce status = PUBLISHED filter globally
+        const query = `
+            SELECT p.*, u.name as author_name 
+            FROM posts p
+            LEFT JOIN users u ON p.author_id = u.id
+            WHERE p.slug = $1 AND p.status = 'published'
+        `;
+        const result = await queryDb(query, [slug]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Post not found or unpublished' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
 };

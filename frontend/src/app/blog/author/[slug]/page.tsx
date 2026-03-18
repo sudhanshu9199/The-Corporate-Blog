@@ -1,0 +1,1 @@
+// author/[slug]/page.tsx
