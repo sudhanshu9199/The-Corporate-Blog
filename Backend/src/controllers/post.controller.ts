@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { pool } from "../config/db";
 import slugify from "slugify";
 
+
+const generateSlug = (title: string) => slugify(title, { lower: true, strict: true }) + '-' + Date.now();
 export const createPost = async (req: Request, res: Response): Promise<any> => {
     try {
         // Hum yahan posts insert karne ka logic daalenge baad mein
