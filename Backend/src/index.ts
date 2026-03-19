@@ -36,6 +36,11 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date() });
 });
 
+app.use((req, res, next) => {
+    console.log(`[ACCESS] ${new Date().toISOString()} | ${req.method} ${req.originalUrl} | IP: ${req.ip}`);
+    next();
+});
+
 app.use('/api/posts', postRoutes);
 
 pool

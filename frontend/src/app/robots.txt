@@ -1,4 +1,12 @@
-User-agent: *
-Disallow: /dashboard/
-Disallow: /api/
-Allow: /blog/
+import { MetadataRoute } from 'next';
+
+export default function robots(): MetadataRoute.Robots {
+  return {
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: '/dashboard/', // 🛑 Blocks admin routes from indexing
+    },
+    sitemap: 'https://the-corporate-blog-rw6q.vercel.app/sitemap.xml',
+  };
+}

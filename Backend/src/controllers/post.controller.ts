@@ -91,3 +91,50 @@ export const getPostBySlug = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Server error' });
     }
 };
+
+export const getPostsByCategory = async (req: Request, res: Response) => {
+    try {
+        const { slug } = req.params;
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const offset = (page - 1) * limit;
+
+        const query = `
+            SELECT p.id, p.title, p.slug, p.cover_image_url, p.published_at, u.name as author_name
+            FROM posts p
+            JOIN users u ON p.author_id = u.id
+            JOIN post_categories pc ON p.id = pc.post_id
+            JOIN categories c ON pc.category_id = c.id
+            WHERE c.slug = $1 AND p.status = 'published' AND p.published_at IS NOT NULL
+            ORDER BY p.published_at DESC
+            LIMIT $2 OFFSET $3
+        `;
+        
+        const result = await queryDb(query, [slug, limit, offset]);
+        res.json({ data: result.rows, page, limit });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+export const getPostsByAuthor = async (req: Request, res: Response) => {
+    try {
+        const { slug } = req.params; // Assuming ID is passed as slug for the author
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        
+        const query = `
+            SELECT p.id, p.title, p.slug, p.cover_image_url, p.published_at, u.name as author_name
+            FROM posts p
+            JOIN users u ON p.author_id = u.id
+            WHERE u.id = $1 AND p.status = 'published' AND p.published_at IS NOT NULL
+            ORDER BY p.published_at DESC
+            LIMIT $2 OFFSET ${(page - 1) * limit}
+        `;
+        
+        const result = await queryDb(query, [slug, limit]);
+        res.json({ data: result.rows });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+};
