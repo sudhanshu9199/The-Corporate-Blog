@@ -1,9 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { GoogleLogin } from "@react-oauth/google";
+import type { CredentialResponse } from "@react-oauth/google";
 import { useRouter } from "next/navigation";
+import type { AxiosError } from "axios";
 import { api } from "@/lib/axios";
 import { useAuthStore } from "@/store/store";
+
+// Role-based redirect — extracted so both handlers share the same logic
+const redirectByRole = (role: string, push: (path: string) => void) => {
+  if (role === "admin" || role === "editor") {
+    push("/dashboard");
+  } else {
+    push("/");
+  }
+};
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -12,26 +24,37 @@ export default function LoginPage() {
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
 
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    setError("");
+    try {
+      const { data } = await api.post("/auth/google", {
+        credential: credentialResponse.credential,
+      });
+
+      const { accessToken, user } = data;
+
+      localStorage.setItem("accessToken", accessToken); // ← consistent key
+      setUser(user);                                     // ← hydrate auth store
+      redirectByRole(user.role, router.push);
+    } catch (err) {
+      setError("Google sign-in failed. Please try again.");
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     try {
-      const response = await api.post("/auth/login", { email, password });
-      const { accessToken, user } = response.data;
+      const { data } = await api.post("/auth/login", { email, password });
+      const { accessToken, user } = data;
 
-      // Save access token to local storage (Refresh token is safe in httpOnly cookie)
       localStorage.setItem("accessToken", accessToken);
       setUser(user);
-
-      // Redirect based on role
-      if (user.role === "admin" || user.role === "editor") {
-        router.push("/dashboard");
-      } else {
-        router.push("/");
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Login failed. Try again.");
+      redirectByRole(user.role, router.push);
+    } catch (err) {
+      const axiosErr = err as AxiosError<{ error: string }>;
+      setError(axiosErr.response?.data?.error || "Login failed. Please try again.");
     }
   };
 
@@ -80,6 +103,20 @@ export default function LoginPage() {
             Sign In
           </button>
         </form>
+
+        <div className="my-4 flex items-center gap-3">
+          <hr className="flex-1 border-gray-200" />
+          <span className="text-xs text-gray-400">or</span>
+          <hr className="flex-1 border-gray-200" />
+        </div>
+
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError("Google sign-in failed. Please try again.")}
+            useOneTap
+          />
+        </div>
       </div>
     </div>
   );
