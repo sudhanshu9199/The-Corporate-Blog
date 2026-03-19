@@ -7,6 +7,7 @@ import { OAuth2Client } from 'google-auth-library';
 
 const BCRYPT_ROUNDS = 12;
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const clientId = process.env.GOOGLE_CLIENT_ID;
 
 const generateTokens = (userId: number, role: string) => {
     const accessToken = jwt.sign(
@@ -103,16 +104,16 @@ export const googleLogin = async (req: Request, res: Response): Promise<any> => 
   try {
     const { credential } = req.body;
 
-    if (!credential) {
-      return res.status(400).json({ success: false, error: 'Missing Google credential' });
-    }
+    if (!clientId) {
+  return res.status(500).json({ error: "Google Client ID is missing in env variables" });
+}
 
-    const ticket = await googleClient.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+const ticket = await googleClient.verifyIdToken({
+  idToken: credential,
+  audience: clientId, // Ab yeh completely error-free hai
+});
 
-    const payload = ticket.getPayload();
+const payload = ticket.getPayload();
     if (!payload?.email) {
       return res.status(400).json({ success: false, error: 'Invalid Google token' });
     }
