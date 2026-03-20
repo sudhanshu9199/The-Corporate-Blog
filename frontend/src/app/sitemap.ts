@@ -1,20 +1,24 @@
 import { MetadataRoute } from 'next';
+import axios from 'axios';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Yahan apna backend API call karke SIRF published posts lani hain
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/posts?status=published`);
-  const { posts } = await res.json();
+  const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/posts`);
+  const posts = res.data;
 
-  const blogUrls = posts.map((post: any) => ({
-    url: `https://the-corporate-blog.vercel.app/blog/${post.slug}`,
-    lastModified: post.updated_at,
+  const postEntries = posts.map((post: any) => ({
+    url: `https://the-corporate-blog-rw6q.vercel.app/blog/${post.slug}`,
+    lastModified: new Date(post.updated_at),
+    changeFrequency: 'weekly',
+    priority: 0.8,
   }));
 
   return [
     {
-      url: 'https://the-corporate-blog.vercel.app',
+      url: 'https://the-corporate-blog-rw6q.vercel.app/',
       lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 1,
     },
-    ...blogUrls,
+    ...postEntries,
   ];
 }
