@@ -7,15 +7,14 @@ import Script from "next/script";
 export const revalidate = 900;
 
 async function getPost(slug: string) {
-  // Replace with your actual deployed backend URL later
+
   const res = await fetch(`http://localhost:8080/api/posts/slug/${slug}`, {
-    next: { revalidate: 900 },
+    next: { revalidate: 3600 },
   });
   if (!res.ok) return null;
   return res.json();
 }
 
-// Generate static routes at build time
 export async function generateStaticParams() {
   const res = await fetch("http://localhost:8080/api/posts?status=published");
   const posts = await res.json();
@@ -24,8 +23,6 @@ export async function generateStaticParams() {
   }));
 }
 
-// Dynamic SEO Metadata
-// Generate SEO Metadata
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const post = await getPost(params.slug); // Using your existing fetch logic
   if (!post) return {};
@@ -58,7 +55,6 @@ export default async function BlogPost({ params }: { params: { slug: string } })
   const post = await getPost(params.slug);
   if (!post) notFound();
 
-  // JSON-LD Structured Data
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -80,7 +76,6 @@ export default async function BlogPost({ params }: { params: { slug: string } })
 
   return (
     <article className="max-w-3xl mx-auto py-12 px-4">
-      {/* ✅ 2. Yahan Image component lagaya (Title se pehle) */}
       {post.cover_image_url && (
         <div className="mb-8 w-full overflow-hidden rounded-lg">
           <Image 
@@ -98,7 +93,6 @@ export default async function BlogPost({ params }: { params: { slug: string } })
       <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
       <p className="text-gray-500 mb-8">By {post.author_name}</p>
 
-      {/* Safe JSON rendering */}
       <BlockRenderer content={post.content} />
     </article>
   );
