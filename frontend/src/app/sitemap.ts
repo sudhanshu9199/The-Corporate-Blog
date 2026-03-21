@@ -14,11 +14,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     {
-      url: 'https://the-corporate-blog-rw6q.vercel.app/',
+      url: 'https://the-corporate-blog-rw6q.vercel.app',
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 1,
     },
-    ...postEntries,
-  ];
+    {
+      url: 'https://the-corporate-blog-rw6q.vercel.app/blog',
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
+    // Map over your fetched posts here...
+  ]
 }

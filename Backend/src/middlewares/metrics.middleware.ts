@@ -1,11 +1,28 @@
 import { Request, Response, NextFunction } from 'express';
 
-export const responseTimeMetrics = (req: Request, res: Response, next: NextFunction) => {
-  const start = process.hrtime();
-  res.on('finish', () => {
-    const diff = process.hrtime(start);
-    const timeInMs = (diff[0] * 1e3 + diff[1] * 1e-6).toFixed(2);
-    console.log(`[Metrics] ${req.method} ${req.originalUrl} took ${timeInMs}ms`);
-  });
-  next();
+export const metricsData = {
+    totalRequests: 0,
+    totalErrors: 0,
+    responseTimes: [] as number[],
+}
+
+export const metricsMiddleware = (req: Request, res: Response, next: NextFunction) => {
+    const start = Date.now();
+    metricsData.totalRequests++;
+
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        metricsData.responseTimes.push(duration);
+        
+        // Keep only last 100 response times to avoid memory leak
+        if (metricsData.responseTimes.length > 100) {
+            metricsData.responseTimes.shift();
+        }
+
+        if (res.statusCode >= 400) {
+            metricsData.totalErrors++;
+        }
+    });
+
+    next();
 };

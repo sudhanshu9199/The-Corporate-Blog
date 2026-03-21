@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import { pool } from "./config/db";
 import authRoutes from "./routes/auth.routes";
 import postRoutes from './routes/post.routes';
+import { metricsMiddleware, metricsData } from './middlewares/metrics.middleware';
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+app.use(metricsMiddleware);
 
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date() });
@@ -60,6 +62,20 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     error: "Something went wrong!",
     details: err.message,
   });
+});
+
+// Endpoint for internal metrics monitoring
+app.get('/api/metrics', (req: Request, res: Response) => {
+    const avgResponseTime = metricsData.responseTimes.length 
+        ? metricsData.responseTimes.reduce((a, b) => a + b, 0) / metricsData.responseTimes.length 
+        : 0;
+
+    res.status(200).json({
+        totalRequests: metricsData.totalRequests,
+        errorRate: `${((metricsData.totalErrors / metricsData.totalRequests) * 100 || 0).toFixed(2)}%`,
+        averageResponseTimeMs: avgResponseTime.toFixed(2),
+        uptime: process.uptime()
+    });
 });
 
 app.use('/api/auth', authRoutes)

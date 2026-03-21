@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: '/dashboard/', // 🛑 Blocks admin routes from indexing
+      disallow: ['/admin/', '/dashboard/'], // 🛑 Blocks admin routes from indexing
     },
     sitemap: 'https://the-corporate-blog-rw6q.vercel.app/sitemap.xml',
   };
