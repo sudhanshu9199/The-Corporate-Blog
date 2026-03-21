@@ -3,7 +3,8 @@ import { Metadata } from "next";
 import Image from "next/image";
 import BlockRenderer from "@/components/BlockRenderer";
 import Script from "next/script";
-import RelatedPosts from "@/components/RelatedPosts";
+import RelatedPosts, { RelatedPostsSkeleton } from "@/components/RelatedPosts";
+import { Suspense } from "react";
 
 export const revalidate = 900;
 
@@ -120,7 +121,9 @@ export default async function BlogPost({ params }: Props) {
 
         <BlockRenderer content={post.content} />
 
-        <RelatedPosts postId={post.id} />
+        <Suspense fallback={<RelatedPostsSkeleton />}>
+          <RelatedPosts postId={post.id} />
+        </Suspense>
       </article>
     </>
   );
