@@ -10,44 +10,46 @@ export const searchPosts = async (
 ): Promise<any> => {
   const startTime = Date.now();
   try {
-    const { q } = req.query;
+    const { q, page = "1", limit = "10", sort = "relevance" } = req.query;
     if (!q || typeof q !== "string") {
       return res.status(400).json({ error: "Search query 'q' is required" });
     }
 
     const term = q.trim();
-    const startTime = Date.now();
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    const offset = (pageNum - 1) * limitNum;
 
-    try {
-      const query = `
-      SELECT
-        p.id,
-        p.title,
-        p.slug,
-        p.cover_image_url,
-        p.published_at,
-        u.name AS author_name
+    // Sorting logic (relevance vs date)
+    const orderBy = sort === "date" 
+      ? "p.published_at DESC" 
+      : "ts_rank(p.search_vector, plainto_tsquery('english', $1)) DESC";
+
+    const query = `
+      SELECT p.id, p.title, p.slug, p.cover_image_url, p.published_at, u.name AS author_name,
+             ts_headline('english', p.content::text, plainto_tsquery('english', $1)) as snippet
       FROM posts p
       LEFT JOIN users u ON p.author_id = u.id
-      WHERE p.status = 'published'
-        AND p.search_vector @@ plainto_tsquery('english', $1)
-      ORDER BY ts_rank(p.search_vector, plainto_tsquery('english', $1)) DESC
-      LIMIT $2;
+      WHERE p.status = 'published' AND p.search_vector @@ plainto_tsquery('english', $1)
+      ORDER BY ${orderBy}
+      LIMIT $2 OFFSET $3;
     `;
 
-      const result = await queryDb(query, [term, SEARCH_LIMIT]);
+    const result = await queryDb(query, [term, limitNum, offset]);
+    const executionTime = Date.now() - startTime;
 
-      console.log(
-        `[Search] q="${term}" | hits=${result.rows.length} | ${Date.now() - startTime}ms`,
-      );
+    // Search Analytics Event (Future BI ready) & Query logging
+    await queryDb(
+      `INSERT INTO search_analytics (query, results_count, execution_time_ms) VALUES ($1, $2, $3)`,
+      [term, result.rows.length, executionTime]
+    );
 
-      res.json({ success: true, query: term, data: result.rows });
-    } catch (err) {
-      console.error("[Search] Error:", err);
-      res
-        .status(500)
-        .json({ success: false, error: "Server error during search" });
+    // Analyze slow queries check (DO)
+    if (executionTime > 200) {
+      console.warn(`[SLOW QUERY] Search for "${term}" took ${executionTime}ms`);
     }
+
+    res.json({ success: true, query: term, data: result.rows, page: pageNum });
   } catch (error) {
     console.error("Search error:", error);
     res.status(500).json({ error: "Server error during search" });
