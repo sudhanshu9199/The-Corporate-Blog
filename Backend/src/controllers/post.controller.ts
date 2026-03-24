@@ -4,6 +4,21 @@ import slugify from "slugify";
 import axios from "axios";
 import crypto from "crypto";
 
+const validateBlocks = (content: any) => {
+  if (content && Array.isArray(content.blocks)) {
+    for (const block of content.blocks) {
+      if (block.type === "faq") {
+        if (!block.data?.items || !Array.isArray(block.data.items)) {
+           throw new Error("Validation failed: FAQ block must contain an array of items.");
+        }
+        block.data.items.forEach((item: any) => {
+           if (!item.question || !item.answer) throw new Error("FAQ missing question or answer.");
+        });
+      }
+    }
+  }
+};
+
 const generateSlug = (title: string) =>
   slugify(title, { lower: true, strict: true }) + "-" + Date.now();
 // POST /posts (Create Draft)
@@ -19,6 +34,8 @@ export const createPost = async (req: Request, res: Response): Promise<any> => {
         .status(400)
         .json({ error: "Content must be a valid JSON object/block" });
     }
+
+    validateBlocks(content);
 
     const newPost = await pool.query(
       `INSERT INTO posts (author_id, title, slug, content, status, seo_metadata) 
@@ -44,6 +61,8 @@ export const updatePost = async (req: Request, res: Response): Promise<any> => {
   try {
     const { id } = req.params;
     const { title, content, status, seo_metadata } = req.body;
+
+    validateBlocks(content);
 
     let updateQuery = `UPDATE posts SET content = $1, status = $2, seo_metadata = $3, updated_at = CURRENT_TIMESTAMP`;
     let values = [content, status || "draft", seo_metadata];

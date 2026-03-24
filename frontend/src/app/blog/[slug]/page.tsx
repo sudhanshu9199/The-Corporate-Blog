@@ -74,8 +74,16 @@ export default async function BlogPost({ params }: Props) {
     "@type": "Article",
     headline: post.title,
     image: post.cover_image_url,
-    author: { "@type": "Person", "name": post.author_name },
+    author: {
+      "@type": "Person",
+      name: post.author_name,
+      url: `${BASE_URL}/author/${post.author_id}`,
+      jobTitle: "Industry Expert",
+    },
     datePublished: post.published_at || post.created_at,
+    wordCount: post.content?.blocks
+      ? JSON.stringify(post.content).split(" ").length
+      : 0,
   };
 
   const breadcrumbLd = {
@@ -87,6 +95,26 @@ export default async function BlogPost({ params }: Props) {
       { "@type": "ListItem", position: 3, name: post.title, item: `${BASE_URL}/blog/${post.slug}` }
     ]
   };
+
+  // FAQ schema — only injected when the post contains faq blocks
+  const faqBlocks = post.content?.blocks?.filter((b: any) => b.type === "faq") ?? [];
+  const faqSchema =
+    faqBlocks.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: faqBlocks
+            .flatMap((b: any) => b.data.items)
+            .map((item: any) => ({
+              "@type": "Question",
+              name: item.question,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: item.answer,
+              },
+            })),
+        }
+      : null;
 
   return (
     <>
@@ -100,6 +128,14 @@ export default async function BlogPost({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
+
+      {faqSchema && (
+        <Script
+          id="json-ld-faq"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+      )}
 
       <article className="max-w-3xl mx-auto py-12 px-4">
         {post.cover_image_url && (

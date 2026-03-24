@@ -1,14 +1,15 @@
 // BlockRenderer.tsx
 import DOMPurify from "isomorphic-dompurify";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
 type ParagraphData  = { text: string };
 type HeadingData    = { text: string; level?: number };
 type BlockquoteData = { text: string };
 type ListData       = { style: "ordered" | "unordered"; items: string[] };
 type ImageData      = { file?: { url: string }; caption?: string };
 type TableData      = { content: string[][]; withHeadings?: boolean };
+type CalloutData = { text: string; style?: "info" | "warning" | "success" };
+type FAQItem = { question: string; answer: string };
+type FAQData = { items: FAQItem[] };
 
 type Block =
   | { type: "paragraph";   data: ParagraphData }
@@ -16,9 +17,9 @@ type Block =
   | { type: "blockquote";  data: BlockquoteData }
   | { type: "list";        data: ListData }
   | { type: "image";       data: ImageData }
-  | { type: "table";       data: TableData };
-
-// ─── Allowed inline HTML (from EditorJS inline tools) ────────────────────────
+  | { type: "table";       data: TableData }
+  | { type: "callout"; data: CalloutData }
+| { type: "faq"; data: FAQData };
 
 const INLINE_TAGS  = ["b", "i", "em", "strong", "a", "mark", "code", "s", "u"];
 const INLINE_ATTRS = ["href", "target", "rel"];
@@ -139,6 +140,35 @@ export default function BlockRenderer({ content }: { content: Block[] }) {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            );
+          }
+
+          case "callout": {
+            const bg = block.data.style === "warning" ? "bg-yellow-50 border-yellow-400" : 
+                       block.data.style === "success" ? "bg-green-50 border-green-400" : 
+                       "bg-blue-50 border-blue-400 text-blue-900";
+            return (
+              <div key={key} className={`p-4 my-6 border-l-4 rounded-r-lg ${bg}`}>
+                <InlineHtml tag="span" html={block.data.text} />
+              </div>
+            );
+          }
+
+          case "faq": {
+            return (
+              <div key={key} className="my-8 space-y-4">
+                {block.data.items.map((item: FAQItem, i: number) => (
+                  <details key={i} className="group border border-gray-200 dark:border-gray-800 rounded-lg open:bg-gray-50 dark:open:bg-gray-900 transition-colors">
+                    <summary className="cursor-pointer px-5 py-4 font-semibold list-none flex justify-between items-center">
+                      <span>{item.question}</span>
+                      <span className="transition group-open:rotate-180">⬇️</span>
+                    </summary>
+                    <div className="px-5 pb-4 text-gray-600 dark:text-gray-400">
+                       <InlineHtml tag="span" html={item.answer} />
+                    </div>
+                  </details>
+                ))}
               </div>
             );
           }
