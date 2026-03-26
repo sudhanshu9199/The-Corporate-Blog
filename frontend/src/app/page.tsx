@@ -1,77 +1,116 @@
+import { Suspense } from "react";
 import Image from "next/image";
 import TrendingWidget from "@/components/TrendingWidget";
+import { getPublishedPosts } from "@/lib/api";
 
-export default function Home() {
+interface Post {
+  id: string;
+  title: string;
+  excerpt?: string;
+  published_at: string;
+  slug: string; 
+}
+
+function PostCard({ post }: { post: Post }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
+    <article className="group p-6 border border-zinc-200 dark:border-zinc-800 rounded-xl transition-colors hover:border-zinc-400 dark:hover:border-zinc-600">
+      <a href={`/posts/${post.slug}`} className="block space-y-2">
+        <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 group-hover:underline underline-offset-4">
+          {post.title}
+        </h2>
+        {post.excerpt && (
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2">
+            {post.excerpt}
+          </p>
+        )}
+        <time
+          dateTime={post.published_at}
+          className="block text-xs text-zinc-400 dark:text-zinc-500"
+        >
+          {new Date(post.published_at).toLocaleDateString("en-IN", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+        </time>
+      </a>
+    </article>
+  )
+}
+
+function PostCardSkeleton() {
+  return (
+    <div className="p-6 border border-zinc-200 dark:border-zinc-800 rounded-xl animate-pulse space-y-3">
+      <div className="h-5 w-3/4 rounded bg-zinc-200 dark:bg-zinc-700" />
+      <div className="h-3 w-full rounded bg-zinc-100 dark:bg-zinc-800" />
+      <div className="h-3 w-1/4 rounded bg-zinc-100 dark:bg-zinc-800" />
+    </div>
+  );
+}
+
+function PostsFeed({ posts }: { posts: Post[] }) {
+  if (posts.length === 0) {
+    return (
+      <p className="text-zinc-400 dark:text-zinc-500 text-sm">
+        No posts published yet. Check back soon.
+      </p>
+    );
+  }
+
+  return (
+    <div className="grid gap-4">
+      {posts.map((post) => (
+        <PostCard key={post.id} post={post} />
+      ))}
+    </div>
+  );
+}
+
+export default async function Home() {
+  const posts: Post[] = await getPublishedPosts();
+  return (
+    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+      <main className="max-w-5xl mx-auto px-4 py-12 sm:px-8">
+        
+        {/* Page Header */}
+        <header className="mb-10 border-b border-zinc-200 dark:border-zinc-800 pb-6">
+          <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+            The Corporate Blog
+          </h1>
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            Insights, updates, and stories from our team.
+          </p>
+        </header>
 
         {/* Main content + Sidebar layout */}
-        <div className="flex w-full gap-6">
-          {/* Left: Main content area */}
-          <div className="flex flex-1 flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-            <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-              To get started, edit the page.tsx file.
-            </h1>
-            <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-              Looking for a starting point or more instructions? Head over to{" "}
-              <a
-                href="https://vercel.com/templates?framework=next.js"
-                className="font-medium text-zinc-950 dark:text-zinc-50"
-              >
-                Templates
-              </a>{" "}
-              or the{" "}
-              <a
-                href="https://nextjs.org/learn"
-                className="font-medium text-zinc-950 dark:text-zinc-50"
-              >
-                Learning
-              </a>{" "}
-              center.
-            </p>
-          </div>
+        <div className="flex flex-col gap-10 md:flex-row md:gap-8">
 
-          {/* Right: Sidebar with Trending widget */}
-          <aside className="w-1/3">
-            <TrendingWidget />
+          {/* Left: Posts Feed */}
+          <section className="flex-1 min-w-0">
+            <Suspense
+              fallback={
+                <div className="grid gap-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <PostCardSkeleton key={i} />
+                  ))}
+                </div>
+              }
+            >
+              <PostsFeed posts={posts} />
+            </Suspense>
+          </section>
+
+          {/* Right: Sidebar */}
+          <aside className="w-full md:w-72 shrink-0 hidden md:block">
+            <Suspense
+              fallback={
+                <div className="h-48 rounded-xl bg-zinc-100 dark:bg-zinc-900 animate-pulse" />
+              }
+            >
+              <TrendingWidget />
+            </Suspense>
           </aside>
-        </div>
-
-        {/* CTA Buttons */}
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          
         </div>
       </main>
     </div>
