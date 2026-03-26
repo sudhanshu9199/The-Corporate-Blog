@@ -14,6 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://the-corporate-blog-rw6q.vercel.app'),
   title: {
     template: "%s | The Corporate Blog",
     default: "The Corporate Blog - Industry Insights",
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: 'https://the-corporate-blog.vercel.app',
+    url: '/',
     siteName: "The Corporate Blog",
   },
   twitter: {

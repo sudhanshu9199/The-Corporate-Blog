@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Image from "next/image";
 import TrendingWidget from "@/components/TrendingWidget";
 import { getPublishedPosts } from "@/lib/api";
+import Link from "next/link";
 
 interface Post {
   id: string;
@@ -14,7 +15,7 @@ interface Post {
 function PostCard({ post }: { post: Post }) {
   return (
     <article className="group p-6 border border-zinc-200 dark:border-zinc-800 rounded-xl transition-colors hover:border-zinc-400 dark:hover:border-zinc-600">
-      <a href={`/posts/${post.slug}`} className="block space-y-2">
+      <Link href={`/posts/${post.slug}`} className="block space-y-2">
         <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 group-hover:underline underline-offset-4">
           {post.title}
         </h2>
@@ -33,7 +34,7 @@ function PostCard({ post }: { post: Post }) {
             day: "numeric",
           })}
         </time>
-      </a>
+      </Link>
     </article>
   )
 }
@@ -110,7 +111,7 @@ export default async function Home() {
               <TrendingWidget />
             </Suspense>
           </aside>
-          
+
         </div>
       </main>
     </div>
