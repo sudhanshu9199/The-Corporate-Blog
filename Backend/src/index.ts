@@ -1,3 +1,5 @@
+import sentry from "@sentry/node";
+import { RewriteFrames } from "@sentry/integrations";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -10,7 +12,6 @@ import postRoutes from './routes/post.routes';
 import { metricsMiddleware, metricsData } from './middlewares/metrics.middleware';
 
 dotenv.config();
-
 const app = express();
 app.use(helmet());
 
