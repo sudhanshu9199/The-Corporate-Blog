@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import axios from 'axios';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/posts`);
+  const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/posts?status=published`);
   const posts = res.data;
 
   const postEntries = posts.map((post: any) => ({

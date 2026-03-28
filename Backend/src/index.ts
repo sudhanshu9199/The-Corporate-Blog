@@ -13,17 +13,33 @@ import { metricsMiddleware, metricsData } from './middlewares/metrics.middleware
 
 dotenv.config();
 const app = express();
+
+app.use(express.json({ limit: "10kb" })); 
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+
 app.use(helmet());
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 10,
   message: "Too many requests from this IP, please try again after 15 minutes.",
   standardHeaders: true,
   legacyHeaders: false,
 });
 
+const publishLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20, // Limit publishing rate
+});
+
+const searchLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 mins
+  max: 50, // Limit spam searching
+});
+
 app.use("/api/", apiLimiter);
+app.use("/api/post/publish", publishLimiter);
+app.use("/api/search", searchLimiter);
 
 app.use(
   cors({
