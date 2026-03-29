@@ -9,6 +9,7 @@ import cookieParser from "cookie-parser";
 import { pool } from "./config/db";
 import authRoutes from "./routes/auth.routes";
 import postRoutes from './routes/post.routes';
+import montizationRoutes from './routes/monetization.routes';
 import { metricsMiddleware, metricsData } from './middlewares/metrics.middleware';
 
 dotenv.config();

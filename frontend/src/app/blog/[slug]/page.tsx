@@ -1,10 +1,12 @@
-import { notFound } from "next/navigation";
-import { Metadata } from "next";
-import Image from "next/image";
-import BlockRenderer from "@/components/BlockRenderer";
-import Script from "next/script";
+// app/blog/[slug]/page.tsx
+
+import { notFound }           from "next/navigation";
+import { Metadata }           from "next";
+import Image                  from "next/image";
+import Script                 from "next/script";
+import { Suspense }           from "react";
+import BlockRenderer          from "@/components/BlockRenderer";
 import RelatedPosts, { RelatedPostsSkeleton } from "@/components/RelatedPosts";
-import { Suspense } from "react";
 
 export const revalidate = 900;
 
@@ -12,7 +14,6 @@ const BASE_URL = "https://the-corporate-blog-rw6q.vercel.app";
 const API_URL  = "http://localhost:8080/api";
 
 async function getPost(slug: string) {
-
   const res = await fetch(`${API_URL}/posts/slug/${slug}`, {
     next: { revalidate: 3600 },
   });
@@ -90,31 +91,29 @@ export default async function BlogPost({ params }: Props) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: `${BASE_URL}/` },
+      { "@type": "ListItem", position: 1, name: "Home", item: `${BASE_URL}/`     },
       { "@type": "ListItem", position: 2, name: "Blog", item: `${BASE_URL}/blog` },
-      { "@type": "ListItem", position: 3, name: post.title, item: `${BASE_URL}/blog/${post.slug}` }
-    ]
+      { "@type": "ListItem", position: 3, name: post.title, item: `${BASE_URL}/blog/${post.slug}` },
+    ],
   };
 
-  // FAQ schema — only injected when the post contains faq blocks
-  const faqBlocks = post.content?.blocks?.filter((b: any) => b.type === "faq") ?? [];
+  const faqBlocks = post.content?.blocks?.filter((b: { type: string }) => b.type === "faq") ?? [];
   const faqSchema =
     faqBlocks.length > 0
       ? {
           "@context": "https://schema.org",
           "@type": "FAQPage",
           mainEntity: faqBlocks
-            .flatMap((b: any) => b.data.items)
-            .map((item: any) => ({
+            .flatMap((b: { data: { items: unknown[] } }) => b.data.items)
+            .map((item: { question: string; answer: string }) => ({
               "@type": "Question",
               name: item.question,
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: item.answer,
-              },
+              acceptedAnswer: { "@type": "Answer", text: item.answer },
             })),
         }
       : null;
+
+  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -128,7 +127,6 @@ export default async function BlogPost({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
-
       {faqSchema && (
         <Script
           id="json-ld-faq"
@@ -146,7 +144,7 @@ export default async function BlogPost({ params }: Props) {
               width={800}
               height={450}
               sizes="(max-width: 768px) 100vw, 800px"
-              priority               // ← hero image: don't lazy-load
+              priority
               className="w-full h-auto object-cover"
             />
           </div>
@@ -155,7 +153,7 @@ export default async function BlogPost({ params }: Props) {
         <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
         <p className="text-gray-500 mb-8">By {post.author_name}</p>
 
-        <BlockRenderer content={post.content} />
+        <BlockRenderer content={post.content} isSponsored={post.is_sponsored} />
 
         <Suspense fallback={<RelatedPostsSkeleton />}>
           <RelatedPosts postId={post.id} />
