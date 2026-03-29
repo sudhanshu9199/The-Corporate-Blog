@@ -498,3 +498,34 @@ export const incrementView = async (req: Request, res: Response): Promise<any> =
     return fail(res, "Server error tracking view.", 500);
   }
 };
+
+export const deletePost = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const userId = req.user.id; // Assuming auth middleware attaches user
+
+    try {
+        await pool.query('BEGIN');
+
+        // 1. Soft Delete
+        await pool.query(
+            `UPDATE posts SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1`,
+            [id]
+        );
+
+        // 2. Audit Log
+        await pool.query(
+            `INSERT INTO publish_audit_logs (post_id, action_by, action) VALUES ($1, $2, 'SOFT_DELETED')`,
+            [id, userId]
+        );
+
+        await pool.query('COMMIT');
+
+        // 3. Trigger Frontend ISR Cache Invalidation
+        await fetch(`https://the-corporate-blog-rw6q.vercel.app/api/revalidate?secret=${process.env.REVALIDATE_SECRET}&path=/blog`);
+
+        res.status(200).json({ message: "Post softly deleted and cache cleared." });
+    } catch (error) {
+        await pool.query('ROLLBACK');
+        res.status(500).json({ error: "Failed to delete post" });
+    }
+};

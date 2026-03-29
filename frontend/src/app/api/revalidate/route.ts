@@ -2,29 +2,34 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 
 export async function GET(request: NextRequest) {
-  const secret = request.nextUrl.searchParams.get('secret');
-  const slug = request.nextUrl.searchParams.get('slug');
+    const { searchParams } = request.nextUrl;
 
-  // Verify secret to prevent unauthorized revalidations
-  if (secret !== process.env.REVALIDATION_SECRET) {
+  const secret = searchParams.get('secret');
+  const path   = searchParams.get('path');
+  const slug   = searchParams.get('slug');
+ 
+  if (secret !== process.env.REVALIDATE_SECRET) {
     return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
   }
-
-  if (!slug) {
-    // Revalidate main blog page and sitemap
-    revalidatePath('/blog');
-    revalidatePath('/sitemap.xml');
-    return NextResponse.json({ revalidated: true, now: Date.now() });
-  }
-
+ 
   try {
-    // Revalidate specific post, the blog listing, and sitemap
-    revalidatePath(`/blog/${slug}`);
-    revalidatePath('/blog');
-    revalidatePath('/sitemap.xml');
-    
-    return NextResponse.json({ revalidated: true, now: Date.now() });
-  } catch (err) {
-    return NextResponse.json({ message: 'Error revalidating' }, { status: 500 });
+    if (slug) {
+      revalidatePath(`/blog/${slug}`);
+      revalidatePath('/blog');
+      revalidatePath('/sitemap.xml');
+      return NextResponse.json({ revalidated: true, slug, now: Date.now() });
+    }
+ 
+    if (path) {
+      revalidatePath(path);
+      return NextResponse.json({ revalidated: true, path, now: Date.now() });
+    }
+ 
+    return NextResponse.json(
+      { revalidated: false, message: 'Provide a path or slug query param' },
+      { status: 400 }
+    );
+  } catch {
+    return NextResponse.json({ message: 'Revalidation failed' }, { status: 500 });
   }
 }
