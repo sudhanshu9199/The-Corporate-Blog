@@ -1,5 +1,5 @@
 import sentry from "@sentry/node";
-import { RewriteFrames } from "@sentry/integrations";
+// import { RewriteFrames } from "@sentry/integrations";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -42,6 +42,7 @@ app.use("/api/", apiLimiter);
 app.use("/api/post/publish", publishLimiter);
 app.use("/api/search", searchLimiter);
 
+app.use('/api/monetization', montizationRoutes);
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
@@ -98,7 +99,6 @@ app.get('/api/metrics', (req: Request, res: Response) => {
 
 app.use('/api/auth', authRoutes)
 const PORT = process.env.PORT || 8000;
-app.listen(8080, () => console.log('Backend running on port 8080'));
 
 if (process.env.NODE_ENV !== "PRODUCTION") {
   app.listen(PORT, () => {
