@@ -66,7 +66,10 @@ app.use('/api/posts', postRoutes);
 
 pool
   .connect()
-  .then(() => console.log("✅ Neon PostgreSQL Connected Successfully!"))
+  .then((client) => {
+    console.log("✅ Neon PostgreSQL Connected Successfully!");
+    client.release();
+  })
   .catch((err) => console.error("❌ DB Connection Error:", err));
 
 app.get("/", (req: Request, res: Response) => {

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import pool from '../config/db'; // Assuming your pg pool is here
+import {pool} from '../config/db'; // Assuming your pg pool is here
 
 const router = Router();
 

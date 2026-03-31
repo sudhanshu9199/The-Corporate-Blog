@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { pool, queryDb } from "../config/db";
+import { AuthRequest } from "../middlewares/auth.middleware";
 import slugify from "slugify";
 import axios from "axios";
 import crypto from "crypto";
@@ -28,7 +29,7 @@ const fail = (res: Response, message: string, statusCode = 400) => {
 }
 
 const generateSlug = (title: string): string => {
-  `${slugify(title, { lower: true, strict: true })}-${Date.now()}`;
+  return `${slugify(title, { lower: true, strict: true })}-${Date.now()}`;
 }
 
 const parsePagination = (query: Request["query"]) => {
@@ -152,7 +153,7 @@ export const getPostBySlug = async (req: Request, res: Response): Promise<any> =
     const result = await queryDb(query, [slug]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Post not found or unpublished", 404 });
+      return res.status(404).json({ error: "Post not found or unpublished" });
     }
     res.json(result.rows[0]);
   } catch (error) {
@@ -499,9 +500,9 @@ export const incrementView = async (req: Request, res: Response): Promise<any> =
   }
 };
 
-export const deletePost = async (req: Request, res: Response) => {
+export const deletePost = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const userId = req.user.id; // Assuming auth middleware attaches user
+    const userId = req.user?.id; // Assuming auth middleware attaches user
 
     try {
         await pool.query('BEGIN');
